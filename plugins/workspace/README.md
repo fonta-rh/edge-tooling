@@ -1,7 +1,7 @@
-# workspace — Multi-Repo Workspace Manager (Claude Code plugin)
+# workspace — Multi-Repo Workspace Manager
 
 An installable [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)
-plugin for AI-assisted development across many repositories. Install it once,
+plugin for AI-assisted development, geared towards long-term tasks across multiple repositories. Install it,
 then from anywhere run `/workspace:setup-environment` to scaffold a workspace:
 declare the repos you need (via a **domain** or a custom config), and the
 plugin clones and organizes them, layers per-repo Claude context on top, and
@@ -34,19 +34,60 @@ directory for future sessions.
 To build a workspace from an arbitrary set of repos instead of a bundled
 domain, use `/workspace:create-domain`.
 
+## Way of Working
+
+A workspace is a long-lived directory. Projects inside it track individual
+tasks — a bug fix, a feature, an investigation — across as many Claude Code
+sessions as they need.
+
+**The loop:**
+
+```text
+                    ┌────────────────────────────┐
+                    │                            │
+                    ▼                            │
+/new-project ──▶ <work> ──▶ /update-project ──▶ /resume-project
+                                │
+                                ▼
+                          /close-project
+```
+
+| Step | What happens |
+|------|-------------|
+| **new-project** | Creates a `projects/<name>/CLAUDE.md` with the task description, checklist, and links to relevant repos. Optionally sets up a git worktree for isolated work. |
+| **work** | Normal development. The project CLAUDE.md keeps you oriented — Claude loads it when you resume. |
+| **update-project** | Records what the session accomplished: checked-off items, decisions, blockers. Run this before ending a session. |
+| **resume-project** | Reloads the project context in a new session. The SessionStart hook also surfaces your recent projects automatically. |
+| **close-project** | Marks the project done and cleans up any worktrees it created. |
+
+For single-session tasks you can skip the loop — just work directly. Projects
+pay off when a task spans multiple sessions or you need to context-switch
+between efforts.
+
+**Handoffs.** When you want the next session to pick up exactly where you
+left off, use `/workspace:handoff` before `/clear`. The next session
+auto-resumes that project instead of showing the project list.
+
 ## Skills
 
-| Skill | Description |
-|-------|-------------|
-| `/workspace:setup-environment` | Set up or refresh a workspace from a domain |
-| `/workspace:create-domain` | Build a custom workspace from arbitrary repos, with collaboratively generated per-repo context |
-| `/workspace:new-project` | Create a new project workspace for a task (bug, feature, CI, docs, analysis) |
-| `/workspace:handoff` | Save session progress and arm a handoff so the next `/clear` resumes automatically |
-| `/workspace:resume-project` | Resume an existing project — reload context and continue |
-| `/workspace:close-project` | Close a completed project and clean up its worktrees |
-| `/workspace:update-project` | Record what a session accomplished into the project docs |
-| `/workspace:consolidate-project` | Archive completed checklist items from a bloated project CLAUDE.md |
-| `/workspace:update-domain` | Feed lessons learned from a project back into its domain's context files |
+**Core workflow** — the project lifecycle:
+
+| Skill | Purpose |
+|-------|---------|
+| `/workspace:new-project` | Start a project for a task (bug, feature, docs, analysis) |
+| `/workspace:update-project` | Record session progress into the project docs |
+| `/workspace:resume-project` | Reload a project's context and continue |
+| `/workspace:close-project` | Mark a project done and clean up worktrees |
+| `/workspace:handoff` | Arm a handoff so the next `/clear` auto-resumes |
+| `/workspace:consolidate-project` | Archive completed checklist items from a large project |
+
+**Workspace setup** — usually one-time:
+
+| Skill | Purpose |
+|-------|---------|
+| `/workspace:setup-environment` | Create or refresh a workspace from a domain |
+| `/workspace:create-domain` | Build a custom domain from arbitrary repos |
+| `/workspace:update-domain` | Feed lessons from a project back into the domain's context files |
 
 A SessionStart hook surfaces your recent projects whenever you launch Claude
 Code inside a workspace (it stays silent elsewhere). After
