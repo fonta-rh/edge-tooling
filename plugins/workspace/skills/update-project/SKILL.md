@@ -114,7 +114,7 @@ Step 3:
 >
 > **Lean Index Rules (binding on every edit):**
 > - Progress entries are one line per milestone, no hashes, no test counts, no review narrative.
-> - Replace, don't append: when a milestone completes, delete the in-progress line.
+> - Replace, don't append: when a milestone completes, delete the in-progress line(s) it supersedes instead of adding a new line.
 > - Narrative (findings, test output, investigation notes, review discussion) goes into a detail file already listed in Reference Files (add a new row if you create one) — never into CLAUDE.md directly.
 > - Hard cap: CLAUDE.md must not exceed 100 lines. Before writing,
 >   estimate whether your edit would push it past 100 lines. If it would,
