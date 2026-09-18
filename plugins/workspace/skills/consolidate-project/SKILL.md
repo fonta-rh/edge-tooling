@@ -46,6 +46,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/consolidate-project.py" --dry-run <projec
 Parse the JSON output:
 
 - **`status: "already_lean"`** — show the `message` and stop.
+- **`status: "over_threshold_no_sections"`** — show the `message` and stop
+  (the file is over the line threshold but no section has enough
+  archivable items to fix automatically — it needs manual trimming).
 - **`status: "error"`** — show the `message` and stop.
 - **`status: "needs_consolidation"`** — proceed to Step 3.
 
