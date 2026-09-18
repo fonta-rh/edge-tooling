@@ -2,7 +2,6 @@
 name: update-project
 description: Update project documentation from what was accomplished in this session
 argument-hint: [name-or-number]
-context: fork
 ---
 
 # Update Project Documentation
