@@ -24,12 +24,12 @@ results, plans, etc.).
 
 ## Step 1: Dispatch the Fork
 
-Check `$ARGUMENTS` for a trailing `auto` token (this is how the
+Check `$ARGUMENTS` for a trailing `--auto` token (this is how the
 auto-update cron job identifies itself — see `/workspace:auto-update`).
 If present, strip it and remember this run is **loop-driven**; it
 determines cron behavior in the final step. A manual invocation (no
-`auto` token) is never loop-driven, regardless of whether a loop happens
-to be running.
+`--auto` token) is never loop-driven, regardless of whether a loop
+happens to be running.
 
 Dispatch a fork (Agent tool, `subagent_type: "fork"`) to do Steps 2-4
 below, passing the remaining argument (if any) as the project name. Do
@@ -44,16 +44,18 @@ to verify. Target 4 to 6 turns. Do not call CronCreate, CronList, or
 CronDelete — cron management happens in the main session after you
 return.
 
-The fork's only output is a one-line report: `updated: <what>` or
-`nothing`.
+The fork's only output is a one-line report: `updated: <what>`,
+`nothing`, `unresolved`, or `failed: <error>`.
 
 ## Step 2: Resolve Project (fork)
 
-Use the project already loaded in this conversation (from
-`/workspace:resume-project` or any earlier project interaction). If
-`$ARGUMENTS` has a token, use that as the project name instead.
+Use the project name passed in Step 1's directive. If none was passed,
+use the project already loaded in this conversation (from
+`/workspace:resume-project` or any earlier project interaction). Do not
+re-check `$ARGUMENTS` here — Step 1 already stripped the `--auto` token
+from it, so any later read of `$ARGUMENTS` in this fork is stale.
 
-If no project is in context and no argument was given, report `nothing`
+If no name was passed and no project is in context, report `unresolved`
 and stop.
 
 ## Step 3: Identify Updates (fork)
@@ -80,13 +82,27 @@ the project directory, never change the `status:` frontmatter field, use
 the Edit tool for existing files and Write for new files, and edit each
 file individually — do not rewrite entire files.
 
+If an Edit or Write call fails partway through, stop and report
+`failed: <error>` — never report `updated:` for a partially-applied set
+of edits.
+
 Report exactly one line: `updated: <brief summary of what changed>`.
 
 ## After the Fork Returns (main session)
 
-Confirm the fork's result to the user (one line: what was updated, or
-"Nothing to update."). If the session produced durable domain-level
-knowledge (not just project status), suggest `/workspace:update-domain`.
+The fork reports one of these values:
+
+- `updated: <what>` — confirm to the user what was updated. If the
+  session produced durable domain-level knowledge (not just project
+  status), suggest `/workspace:update-domain`.
+- `nothing` — tell the user: "Nothing to update."
+- `unresolved` — tell the user a project couldn't be resolved and ask
+  which one they meant. Do not say "notes are current" — nothing was
+  actually checked.
+- `failed: <error>` — tell the user the update failed with that error
+  and suggest retrying `/workspace:update-project` manually.
+- No report at all (the Agent tool call itself errored) — treat the same
+  as `failed: <error>`, using whatever error the tool call surfaced.
 
 **Cron management only applies when this run is loop-driven** (Step 1).
 A manual invocation stops here — never call CronCreate, CronList, or
@@ -97,9 +113,16 @@ If loop-driven:
   date/time 50 minutes from now (`date`) and call CronCreate with
   `recurring: false`, cron pinned to that exact
   minute/hour/day-of-month/month (not `*/50` — cron reads that as
-  minutes 0 and 50), prompt `/workspace:update-project <name> auto`.
+  minutes 0 and 50), prompt `/workspace:update-project <name> --auto`.
+  If CronCreate fails, tell the user the update was saved but re-arming
+  auto-update failed with that error, and to run `/workspace:auto-update`
+  to re-enable. Do not claim the loop is still running.
 - Fork reported `nothing` — do not re-arm. Tell the user: "Notes are
   current. Auto-update stopped. Run `/workspace:auto-update` to
   re-enable."
-- Fork failed outright — tell the user: "Update failed: [error summary].
-  Run `/workspace:update-project` manually to retry." Do not re-arm.
+- Fork reported `unresolved` — do not re-arm. Ask the user which project
+  they meant; auto-update has effectively stopped since the loop can no
+  longer identify its target.
+- Fork reported `failed: <error>`, or no report at all — tell the user:
+  "Update failed: [error summary]. Run `/workspace:update-project`
+  manually to retry." Do not re-arm.
