@@ -115,6 +115,16 @@ class TestProgressNarrativeThreshold(ConsolidateProjectFixture):
         self.assertEqual(dry["status"], "needs_consolidation")
         self.assertEqual(dry["sections"][0]["to_archive"], 9)
 
+    def test_narrative_in_non_progress_section_does_not_qualify(self):
+        lines = ["# Title", "", "## Fix Plan"]
+        lines += [f"- [x] item {i}" for i in range(3)]
+        lines += [f"- narrative note {i}" for i in range(9)]
+        self.write_claude_md("\n".join(lines) + "\n")
+
+        result = self.run_consolidate("--dry-run")
+
+        self.assertEqual(result["status"], "already_lean")
+
 
 class TestFileLineThreshold(ConsolidateProjectFixture):
     """A file over the line threshold is flagged even with no qualifying section."""

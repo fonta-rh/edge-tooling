@@ -162,7 +162,7 @@ def parse_reference_table(text: str) -> tuple[bool, bool, int]:
 def build_archive_block(section: Section, today: str) -> str:
     """Build the archive markdown block for a section."""
     checked = section.checked
-    to_archive = checked[:-KEEP_RECENT] if len(checked) > KEEP_RECENT else checked
+    to_archive = checked[:-KEEP_RECENT]
     strikethroughs = section.strikethrough
     narrative = section.narrative if section.name == NARRATIVE_SECTION else []
 

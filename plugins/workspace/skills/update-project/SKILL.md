@@ -39,11 +39,12 @@ makes, including the ones the dispatched background agent applies:
   a detail file already listed in Reference Files (add a new row if you
   create one).
 - **Hard cap: CLAUDE.md must not exceed 100 lines.** Before writing, count
-  the current file's lines. If the update would push it over the cap, run
-  consolidation first (Step 4), then apply the update to the consolidated
-  file. If it would still exceed the cap afterward, move the overflow into
-  a detail file and leave only an index-appropriate pointer line in
-  CLAUDE.md.
+  the current file's lines. If it already exceeds 100, or the update would
+  push it over, run consolidation first (Step 4), then apply the update to
+  the consolidated file. If consolidation reports `over_threshold_no_sections`,
+  manually move content into a detail file first. If it would still exceed
+  the cap afterward, move the overflow into a detail file and leave only an
+  index-appropriate pointer line in CLAUDE.md.
 
 ## Step 1: Resolve Project
 
@@ -117,12 +118,15 @@ Step 3:
 > - Replace, don't append: when a milestone completes, delete the in-progress line(s) it supersedes instead of adding a new line.
 > - Narrative (findings, test output, investigation notes, review discussion) goes into a detail file already listed in Reference Files (add a new row if you create one) — never into CLAUDE.md directly.
 > - Hard cap: CLAUDE.md must not exceed 100 lines. Before writing,
->   estimate whether your edit would push it past 100 lines. If it would,
->   run `python3 "<consolidation script path>" <name>`, then re-read the
+>   check whether it already exceeds 100 lines, or whether your edit would
+>   push it past 100. If either is true, run
+>   `python3 "<consolidation script path>" <name>`, then re-read the
 >   consolidated CLAUDE.md and apply your updates to that file instead.
->   If the update would still exceed 100 lines after consolidation, move
->   the overflow into a detail file (add a Reference Files row) and leave
->   only a pointer line in CLAUDE.md.
+>   If the script returns `over_threshold_no_sections`, manually move
+>   content into a detail file before applying the update. If the update
+>   would still exceed 100 lines after consolidation, move the overflow
+>   into a detail file (add a Reference Files row) and leave only a
+>   pointer line in CLAUDE.md.
 >
 > Also update the `last-active` frontmatter field to the current date
 > and time (YYYY-MM-DDTHH:MM) — this drives SessionStart project ordering.
