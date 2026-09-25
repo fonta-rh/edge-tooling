@@ -37,12 +37,18 @@ not use a fresh agent and do not set a `model` override — a fresh agent
 or a different model has no conversation context and forces a cold
 re-read of everything already in context.
 
-Give the fork this directive: You already have the conversation and the
-project CLAUDE.md in context. Do not re-read files that are in context.
-Apply all edits with the fewest tool calls possible. Do not re-read files
-to verify. Target 4 to 6 turns. Do not call CronCreate, CronList, or
-CronDelete — cron management happens in the main session after you
-return.
+Give the fork this directive: Check whether the project's CLAUDE.md
+*actual current content* is visible in your inherited context — not a
+summary of an earlier edit (e.g. a prior fork's one-line `updated:`
+report), which can be stale relative to what's on disk. If the full file
+content is present, use it directly and do not re-read it. If only a
+summary, partial content, or an earlier fork's report is present, read
+the file fresh with the Read tool before editing — inherited context is
+not a substitute for the file when it doesn't actually contain the file.
+Otherwise, apply all edits with the fewest tool calls possible and do not
+re-read files to verify. Target 4 to 6 turns. Do not call CronCreate,
+CronList, or CronDelete — cron management happens in the main session
+after you return.
 
 The fork's only output is a one-line report: `updated: <what>`,
 `nothing`, `unresolved`, or `failed: <error>`.
@@ -89,6 +95,24 @@ of edits.
 Report exactly one line: `updated: <brief summary of what changed>`.
 
 ## After the Fork Returns (main session)
+
+**This section fires on a different trigger than Step 1.** Step 1 ends
+the dispatch turn once the fork is launched — `subagent_type: "fork"`
+always runs in the background, so the dispatching turn cannot see its
+result and must not act on this section yet. The instructions below
+execute in a **separate, later turn**, entered only when the fork's
+completion arrives as a new user-role notification message. Two trigger
+points, not one continuous flow:
+
+- **Dispatch turn** (Step 1): launch the fork, then stop. Do not guess,
+  predict, or fabricate what the fork will report.
+- **Notification turn** (this section): triggered by the fork's
+  notification landing. Read the report value it contains and act on the
+  matching branch below.
+
+If the user asks a question before the notification has arrived, say the
+update is still running — do not answer as if a report value is already
+known.
 
 The fork reports one of these values:
 
